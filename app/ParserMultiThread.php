@@ -14,6 +14,7 @@ final class ParserMultiThread
     public function parse(string $inputPath, string $outputPath): void
     {
         $rec = function ($ch, $nbThreads) {
+            $data = [];
             $nbReceive = 0;
 
             while ($nbReceive != $nbThreads) {
@@ -35,14 +36,12 @@ final class ParserMultiThread
 
         $run = function ($nb, $ch, $inputPath, $lineBegin, $lineEnd) {
             $file = new SplFileObject($inputPath, "r");
-            for ($i = 0; $i < $lineBegin; $i++) {
-                $file->fgets();
-            }
+            $file->fseek($lineBegin);
 
             $result = [];
             $nbLineRead = 0;
 
-            while ($file->key() < $lineEnd && !$file->eof()) {
+            while ($file->ftell() < $lineEnd && !$file->eof()) {
                 $line = $file->fgets();
 
                 $cut = strpos($line, ",");
@@ -72,17 +71,31 @@ final class ParserMultiThread
 
 
         $threads = [];
-        $nbThreads = 4;
+        $nbThreads = 8;
         $totalLine = count($offsets) - 1;
         $nbLinePerThreads = intdiv($totalLine, $nbThreads);
+        $remainder = $totalLine % $nbThreads;
 
-        $data = [];
+        var_dump($totalLine, $nbLinePerThreads, $remainder);
 
+        for ($i = 0; $i < $nbThreads; $i++) {
+            $lineBegin = $nbLinePerThreads * $i + min($i, $remainder);
+            $lineEnd = $nbLinePerThreads * ($i + 1) + min($i + 1, $remainder);
+            var_dump("Thread $i : lignes $lineBegin -> $lineEnd");
+        }
+
+        var_dump("Total offsets : " . count($offsets));
         $ch = new Channel();
 
         for ($i = 0; $i < $nbThreads; $i++) {
+            $lineBegin = $nbLinePerThreads * $i + min($i, $remainder);
+            $lineEnd = $nbLinePerThreads * ($i + 1) + min($i + 1, $remainder);
+
+            $offsetBegin = $offsets[$lineBegin];
+            $offsetEnd = $offsets[$lineEnd] ?? $offsets[$totalLine];
+
             $thread = new Runtime();
-            $thread->run($run, [$i, $ch, $inputPath, $nbLinePerThreads * $i + 1, $nbLinePerThreads + $nbLinePerThreads * $i]);
+            $thread->run($run, [$i, $ch, $inputPath, $offsetBegin, $offsetEnd]);
             array_push($threads, $thread);
         }
 
