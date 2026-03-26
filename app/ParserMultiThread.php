@@ -13,10 +13,14 @@ final class ParserMultiThread
 
     public function parse(string $inputPath, string $outputPath): void
     {
+<<<<<<< HEAD
         //Reçois les données et les formattent
 
         $rec = function ($ch, $nbThreads) {
             $data = [];
+=======
+        $rec = function ($ch, $nbThreads) {
+>>>>>>> 8c8534d (Init Commit)
             $nbReceive = 0;
 
             while ($nbReceive != $nbThreads) {
@@ -36,11 +40,19 @@ final class ParserMultiThread
             return $data;
         };
 
+<<<<<<< HEAD
         //Lecture et premier formattage
 
         $run = function ($nb, $ch, $inputPath, $lineBegin, $lineEnd) {
             $file = new SplFileObject($inputPath, "r");
             $file->seek($lineBegin);
+=======
+        $run = function ($nb, $ch, $inputPath, $lineBegin, $lineEnd) {
+            $file = new SplFileObject($inputPath, "r");
+            for ($i = 0; $i < $lineBegin; $i++) {
+                $file->fgets();
+            }
+>>>>>>> 8c8534d (Init Commit)
 
             $result = [];
             $nbLineRead = 0;
@@ -63,6 +75,7 @@ final class ParserMultiThread
             $ch->send($result);
         };
 
+<<<<<<< HEAD
         //Initialisation des variables pour les threads
 
 
@@ -72,10 +85,30 @@ final class ParserMultiThread
         $nbLinePerThreads = intdiv($totalLine, $nbThreads);
 
         //Création des threads
+=======
+
+        $offsets = [];
+        $file = new SplFileObject($inputPath, "r");
+        $file->rewind();
+
+        while (!$file->eof()) {
+            $offsets[] = $file->ftell();
+            $file->fgets();
+        }
+
+
+        $threads = [];
+        $nbThreads = 4;
+        $totalLine = count($offsets) - 1;
+        $nbLinePerThreads = intdiv($totalLine, $nbThreads);
+
+        $data = [];
+>>>>>>> 8c8534d (Init Commit)
 
         $ch = new Channel();
 
         for ($i = 0; $i < $nbThreads; $i++) {
+<<<<<<< HEAD
             $lineBegin = $nbLinePerThreads * $i;
             $lineEnd = $nbLinePerThreads * ($i + 1);
 
@@ -86,6 +119,13 @@ final class ParserMultiThread
 
         //Réception des données formattées
 
+=======
+            $thread = new Runtime();
+            $thread->run($run, [$i, $ch, $inputPath, $nbLinePerThreads * $i + 1, $nbLinePerThreads + $nbLinePerThreads * $i]);
+            array_push($threads, $thread);
+        }
+
+>>>>>>> 8c8534d (Init Commit)
         $future = (new Runtime())->run($rec, [$ch, $nbThreads]);
 
         $data = $future->value();
@@ -94,8 +134,11 @@ final class ParserMultiThread
             ksort($data[$key], SORT_STRING);
         }
 
+<<<<<<< HEAD
         //Création de la string JSON
 
+=======
+>>>>>>> 8c8534d (Init Commit)
         $lastKey = array_key_last($data);
         $bjstr = "{\n";
         foreach ($data as $key => $value) {
