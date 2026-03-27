@@ -12,16 +12,23 @@ final class ParserSingleThread
 
         while (!feof($file)) {
             $line = fgets($file);
-            $cut = strpos($line, ",");
+            // $cut = strpos($line, ",");
 
-            $k = substr($line, 19, str_contains($line, "\n") ? -27 : -26);
-            $v = substr($line, $cut + 1, str_contains($line, "\n") ? -16 : -15);
+            // $k = substr($line, 19, str_contains($line, "\n") ? -27 : -26);
+            // $v = substr($line, $cut + 1, str_contains($line, "\n") ? -16 : -15);
 
-            if (!empty($data[$k][$v])) {
-                $data[$k][$v]++;
-            } else {
-                $data[$k][$v] = 1;
-            }
+            $l = explode(',', rtrim($line));
+
+            $k = substr($l[0], 19);
+            $v = substr($l[1], 0, -15);
+
+            // if (!empty($data[$k][$v])) {
+            //     $data[$k][$v]++;
+            // } else {
+            //     $data[$k][$v] = 1;
+            // }
+
+            $data[$k][$v] = ($data[$k][$v] ?? 0) + 1;
         }
 
         fclose($file);
@@ -33,25 +40,26 @@ final class ParserSingleThread
 
         $lastKey = array_key_last($data);
         $bjstr = "{\n";
-        foreach($data as $key => $value) {
+
+        foreach ($data as $key => $value) {
             $lastElement = array_key_last($data[$key]);
-            $nk = str_replace("/","\/", $key);
+            $nk = str_replace("/", "\/", $key);
+
             $bjstr .= "    \"$nk\": {\n";
-            foreach($value as $date => $dv){
-                if($date != $lastElement){
+
+            foreach ($value as $date => $dv) {
+                if ($date != $lastElement) {
                     $bjstr .= "        \"$date\": $dv,\n";
-                }else{
+                } else {
                     $bjstr .= "        \"$date\": $dv\n";
                 }
             }
-            if ($lastKey != $key){
+            if ($lastKey != $key) {
                 $bjstr .= "    },\n";
-            }else{
-                $bjstr .= "    }\n";   
+            } else {
+                $bjstr .= "    }\n}";
             }
         }
-
-        $bjstr .= "}";
 
         file_put_contents($outputPath, $bjstr);
     }
